@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catalogue boutique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#faf8f3;--card:#fff;--ink:#16182a;--muted:#5f6378;--line:#e4e1d8;--brand:#243088;--brand-ink:#fff;--gold:#f2b01e;--wa:#14803c;--wa-ink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12131d;--card:#1c1e2e;--ink:#f1f0ea;--muted:#a3a6bb;--line:#2d3047;--brand:#9aa7ff;--brand-ink:#12131d;--wa:#2fbf6c;--wa-ink:#0c1a12;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12131d;--card:#1c1e2e;--ink:#f1f0ea;--muted:#a3a6bb;--line:#2d3047;--brand:#9aa7ff;--brand-ink:#12131d;--wa:#2fbf6c;--wa-ink:#0c1a12;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;line-height:1.45}
+header{padding:28px 16px 12px;max-width:960px;margin:0 auto}
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(1.9rem,7vw,3rem);line-height:1.05;margin:0 0 6px;letter-spacing:-.02em}
+.tag{color:var(--muted);margin:0;max-width:46ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+.bar-in{max-width:960px;margin:0 auto;padding:10px 16px}
+input[type=search]{width:100%;font:inherit;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font:inherit;font-weight:500;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+main{max-width:960px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:640px){.grid{grid-template-columns:repeat(3,1fr);gap:16px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.pic{aspect-ratio:1/1;position:relative;display:grid;place-items:center;color:#fff;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:2.6rem}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.badge{position:absolute;top:8px;left:8px;background:var(--gold);color:#16182a;font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:6px}
+.body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.name{font-weight:700;margin:0;font-size:1rem}
+.desc{margin:0;color:var(--muted);font-size:.85rem}
+.price{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:1.15rem}
+select{font:inherit;font-size:.88rem;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+.order{margin-top:auto;display:block;text-align:center;text-decoration:none;font-weight:700;background:var(--wa);color:var(--wa-ink);padding:11px 10px;border-radius:10px}
+.order[aria-disabled=true]{background:var(--line);color:var(--muted);pointer-events:none}
+.order:focus-visible,.chip:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.empty{padding:40px 0;text-align:center;color:var(--muted)}
+footer{max-width:960px;margin:0 auto;padding:8px 16px 40px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="shop"></h1>
+  <p class="tag" id="tagline"></p>
+</header>
+<div class="bar"><div class="bar-in">
+  <input type="search" id="q" placeholder="Rechercher un article" aria-label="Rechercher un article">
+  <div class="chips" id="chips" role="group" aria-label="Catégories"></div>
+</div></div>
+<main><div class="grid" id="grid"></div><div class="empty" id="empty" hidden>Aucun article trouvé. Essayez un autre mot ou une autre catégorie.</div></main>
+<footer id="foot"></footer>
+<script>
+/* ===== À MODIFIER POUR CHAQUE COMMERÇANT ===== */
+var SHOP = {
+  name: "Boutique Exemple",
+  tagline: "Mode, pagnes, beauté et accessoires. Livraison dans toute la ville.",
+  whatsapp: "22376580317",       // numéro avec indicatif, sans + ni espaces
+  currency: "FCFA",
+  info: "Paiement par Mobile Money ou à la livraison. Écrivez-nous pour les délais."
+};
+/* Chaque article : cat = catégorie (les onglets se créent tout seuls), options = choix de taille/couleur,
+   img = photo (image intégrée en data:), soldOut = true si épuisé, badge = petit texte (ex. "Nouveau") */
+var PRODUCTS = [
+  {name:"Robe wax évasée",cat:"Vêtements",price:15000,desc:"Coupe fluide, tissu wax 100 % coton.",options:[{label:"Taille",values:["S","M","L","XL"]}],badge:"Nouveau"},
+  {name:"Ensemble bazin riche",cat:"Vêtements",price:35000,desc:"Boubou et pantalon brodés.",options:[{label:"Taille",values:["M","L","XL","XXL"]},{label:"Couleur",values:["Bleu","Blanc","Bordeaux"]}]},
+  {name:"Pagne wax 6 yards",cat:"Pagnes",price:12000,desc:"Motifs au choix, couleurs éclatantes.",options:[{label:"Motif",values:["Fleurs","Géométrique","Abstrait"]}]},
+  {name:"Pagne tissé",cat:"Pagnes",price:18000,desc:"Fait main, finition soignée.",options:[]},
+  {name:"Beurre de karité pur",cat:"Cosmétiques",price:3500,desc:"Pot de 250 g, non raffiné.",options:[]},
+  {name:"Huile de coco",cat:"Cosmétiques",price:4000,desc:"Cheveux et peau, flacon de 200 ml.",options:[]},
+  {name:"Sac à main cuir",cat:"Accessoires",price:22000,desc:"Fermeture sécurisée, deux poches.",options:[{label:"Couleur",values:["Noir","Marron","Beige"]}],soldOut:true},
+  {name:"Sandales brodées",cat:"Chaussures",price:9000,desc:"Confortables, semelle souple.",options:[{label:"Pointure",values:["37","38","39","40","41"]}]}
+];
+/* ===== FIN DE LA PARTIE À MODIFIER ===== */
+
+var HUES=[228,28,160,340,48,280,200,100];
+var cats=[],active="Tous";
+PRODUCTS.forEach(function(p){if(cats.indexOf(p.cat)<0)cats.push(p.cat)});
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202f")+" "+SHOP.currency}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+document.getElementById("shop").textContent=SHOP.name;
+document.title=SHOP.name+" – Catalogue";
+document.getElementById("tagline").textContent=SHOP.tagline;
+document.getElementById("foot").textContent=SHOP.info;
+function chips(){
+  var box=document.getElementById("chips");box.innerHTML="";
+  ["Tous"].concat(cats).forEach(function(c){
+    var b=document.createElement("button");b.className="chip";b.textContent=c;
+    b.setAttribute("aria-pressed",c===active);
+    b.onclick=function(){active=c;chips();render()};box.appendChild(b)});
+}
+function pic(p){
+  var h=HUES[cats.indexOf(p.cat)%HUES.length];
+  var bg="repeating-radial-gradient(circle at 50% 50%,hsl("+h+" 55% 38%) 0 10px,hsl("+h+" 60% 52%) 10px 20px,hsl("+((h+40)%360)+" 80% 62%) 20px 24px)";
+  var inner=p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.name)+'">':esc(p.name.charAt(0));
+  return '<div class="pic" style="background:'+(p.img?"var(--line)":bg)+'">'+inner+(p.badge?'<span class="badge">'+esc(p.badge)+'</span>':"")+'</div>';
+}
+function link(p,card){
+  var parts=[];
+  card.querySelectorAll("select").forEach(function(s){parts.push(s.getAttribute("data-l")+" : "+s.value)});
+  var msg="Bonjour, je veux commander : "+p.name+(parts.length?" ("+parts.join(", ")+")":"")+" – "+fmt(p.price)+". Est-il disponible ?";
+  return "https://wa.me/"+SHOP.whatsapp+"?text="+encodeURIComponent(msg);
+}
+function render(){
+  var q=document.getElementById("q").value.trim().toLowerCase();
+  var grid=document.getElementById("grid");grid.innerHTML="";
+  var list=PRODUCTS.filter(function(p){
+    return (active==="Tous"||p.cat===active)&&(!q||(p.name+" "+p.desc+" "+p.cat).toLowerCase().indexOf(q)>=0)});
+  document.getElementById("empty").hidden=list.length>0;
+  list.forEach(function(p){
+    var card=document.createElement("article");card.className="card";
+    var opts=(p.options||[]).map(function(o){
+      return '<select data-l="'+esc(o.label)+'" aria-label="'+esc(o.label)+'">'+o.values.map(function(v){return "<option>"+esc(v)+"</option>"}).join("")+"</select>"}).join("");
+    card.innerHTML=pic(p)+'<div class="body"><h2 class="name">'+esc(p.name)+'</h2><p class="desc">'+esc(p.desc||"")+'</p><div class="price">'+fmt(p.price)+'</div>'+opts+
+      '<a class="order" target="_blank" rel="noopener"'+(p.soldOut?' aria-disabled="true">Épuisé':">Commander sur WhatsApp")+'</a></div>';
+    var a=card.querySelector(".order");
+    if(!p.soldOut){a.href=link(p,card);card.querySelectorAll("select").forEach(function(s){s.onchange=function(){a.href=link(p,card)}})}
+    grid.appendChild(card)});
+}
+document.getElementById("q").oninput=render;
+chips();render();
+</script>
+</body>
+</html>
